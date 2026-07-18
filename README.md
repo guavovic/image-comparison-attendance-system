@@ -1,43 +1,48 @@
-# Facial Recognition Login System
+# Attendance System with Image Comparison
 
-## Descrição
-Este projeto é um sistema de login que utiliza reconhecimento facial para autenticar usuários. Desenvolvido em Java, ele captura e analisa imagens faciais para verificar a identidade dos usuários.
+Java desktop application that registers employee attendance by comparing a captured photo against a set of stored reference images.
 
-## Funcionalidades
-- Captura de imagem facial via webcam.
-- Processamento e análise de imagens faciais.
-- Autenticação de usuários baseada em reconhecimento facial.
-- Interface amigável e intuitiva.
+## About
 
-## Instalação
+Academic project built to explore image processing fundamentals in pure Java, without external computer vision libraries. The system loads an employee photo and decides whether it matches a registered person by combining three classic similarity techniques.
 
-### Pré-requisitos
-- Java Development Kit (JDK) 8 ou superior
-- Apache Maven
-- OpenCV (biblioteca de visão computacional)
+> **Note:** this project does not use machine learning or face detection. It compares whole images statistically, which was the scope of the assignment.
 
-### Passos
-1. Clone o repositório:
-    ```sh
-    git clone https://github.com/guavovic/facial-recognition-login-system.git
-    ```
-2. Navegue até o diretório do projeto:
-    ```sh
-    cd facial-recognition-login-system
-    ```
-3. Instale as dependências do projeto usando Maven:
-    ```sh
-    mvn install
-    ```
-4. Certifique-se de que o OpenCV está configurado corretamente em seu sistema.
+## How It Works
 
-5. Compile e execute o projeto:
-    ```sh
-    mvn compile
-    mvn exec:java -Dexec.mainClass="com.seuusuario.Main"
-    ```
+1. A reference image (`funcionario.png`) is loaded from the validation folder.
+2. Every image in the `database` folder is resized to 100x100 and compared against it.
+3. Three similarity scores are computed and combined by weight:
 
-## Uso
-1. Abra o aplicativo.
-2. Aponte a câmera para o seu rosto.
-3. O sistema irá capturar a imagem facial e tentar autenticar o usuário.
+| Technique | Weight | Implementation |
+|---|---|---|
+| Histogram similarity | 0.4 | 256-bin histogram over the red channel |
+| Pixel-by-pixel comparison | 0.3 | Direct per-pixel difference |
+| Distance metric | 0.3 | Euclidean and Manhattan distance over histograms |
+
+4. If the weighted score reaches **0.85**, the match is accepted and the attendance record is written with a timestamp.
+
+## Architecture
+
+The application starts from `visuais/TelaCentral.java`.
+
+## Tech Stack
+
+Java (Swing, AWT, ImageIO). No external dependencies.
+
+## How to Open
+
+Eclipse project. Import the `sistema-bater-ponto-ia-projeto` folder as an existing Java project and run `TelaCentral`.
+
+## Known Limitations
+
+Documented honestly, as this is an archived academic project:
+
+- Compares whole images rather than faces, so lighting or clothing changes affect the result.
+- The histogram uses only the red channel, ignoring green and blue.
+- File paths are hardcoded for Windows and resolved through machine detection.
+- Attendance records are written to a fixed folder instead of the matched user's.
+
+## Status
+
+Academic project (2022) — archived and no longer maintained.
