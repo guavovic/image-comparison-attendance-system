@@ -45,4 +45,4 @@ Documented honestly, as this is an archived academic project:
 
 ## Status
 
-Academic project (2022) — archived and no longer maintained.
+Academic project (2022) - archived and no longer maintained.
