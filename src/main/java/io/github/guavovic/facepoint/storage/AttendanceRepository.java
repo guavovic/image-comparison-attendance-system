@@ -44,22 +44,48 @@ public final class AttendanceRepository {
     }
 
     public List<AttendanceRecord> findByEmployee(Employee employee) {
+        return find(employee.id(), null, null);
+    }
+
+    public List<AttendanceRecord> findAll() {
+        return find(null, null, null);
+    }
+
+    public List<AttendanceRecord> find(Long employeeId, LocalDateTime from, LocalDateTime to) {
+        StringBuilder sql = new StringBuilder(SELECT).append("WHERE 1 = 1 ");
+        List<Object> parameters = new ArrayList<>();
+        if (employeeId != null) {
+            sql.append("AND e.id = ? ");
+            parameters.add(employeeId);
+        }
+        if (from != null) {
+            sql.append("AND r.recorded_at >= ? ");
+            parameters.add(from.toString());
+        }
+        if (to != null) {
+            sql.append("AND r.recorded_at < ? ");
+            parameters.add(to.toString());
+        }
+        sql.append("ORDER BY r.recorded_at, r.id");
+
         try (Connection connection = database.connect();
-                PreparedStatement statement = connection.prepareStatement(
-                        SELECT + "WHERE e.id = ? ORDER BY r.recorded_at, r.id")) {
-            statement.setLong(1, employee.id());
+                PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < parameters.size(); i++) {
+                statement.setObject(i + 1, parameters.get(i));
+            }
             return read(statement);
         } catch (SQLException e) {
             throw new StorageException("Não foi possível listar os pontos", e);
         }
     }
 
-    public List<AttendanceRecord> findAll() {
+    public void delete(long id) {
         try (Connection connection = database.connect();
-                PreparedStatement statement = connection.prepareStatement(SELECT + "ORDER BY r.recorded_at, r.id")) {
-            return read(statement);
+                PreparedStatement statement = connection.prepareStatement("DELETE FROM attendance_records WHERE id = ?")) {
+            statement.setLong(1, id);
+            statement.executeUpdate();
         } catch (SQLException e) {
-            throw new StorageException("Não foi possível listar os pontos", e);
+            throw new StorageException("Não foi possível remover o registro", e);
         }
     }
 

@@ -36,6 +36,29 @@ public final class EmployeeRepository {
         }
     }
 
+    public void update(Employee employee) {
+        String sql = "UPDATE employees SET name = ?, shift = ?, role = ? WHERE id = ?";
+        try (Connection connection = database.connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, employee.name());
+            statement.setString(2, employee.shift());
+            statement.setString(3, employee.role());
+            statement.setLong(4, employee.id());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new StorageException("Não foi possível atualizar o funcionário", e);
+        }
+    }
+
+    public void delete(long id) {
+        try (Connection connection = database.connect();
+                PreparedStatement statement = connection.prepareStatement("DELETE FROM employees WHERE id = ?")) {
+            statement.setLong(1, id);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new StorageException("Não foi possível remover o funcionário", e);
+        }
+    }
+
     public Optional<Employee> findById(long id) {
         String sql = "SELECT id, name, shift, role FROM employees WHERE id = ?";
         try (Connection connection = database.connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
