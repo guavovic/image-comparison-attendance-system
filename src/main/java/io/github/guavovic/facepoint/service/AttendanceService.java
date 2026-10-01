@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.imageio.ImageIO;
 
@@ -22,7 +23,7 @@ public final class AttendanceService {
     public record PhotoScore(Employee employee, Path photo, double similarity) {
     }
 
-    public record PunchResult(List<PhotoScore> scores, List<AttendanceRecord> records) {
+    public record PunchResult(List<PhotoScore> scores, Optional<AttendanceRecord> record) {
     }
 
     private final EmployeeRepository employees;
@@ -44,19 +45,24 @@ public final class AttendanceService {
         BufferedImage probe = read(photo);
         LocalDateTime now = LocalDateTime.now(clock).withNano(0);
         List<PhotoScore> scores = new ArrayList<>();
-        List<AttendanceRecord> records = new ArrayList<>();
+        PhotoScore best = null;
 
         for (Employee employee : employees.findAll()) {
             for (Path registered : photos.photosOf(employee)) {
-                double similarity = comparator.similarity(probe, read(registered));
-                scores.add(new PhotoScore(employee, registered, similarity));
-                if (similarity >= ImageComparator.THRESHOLD) {
-                    records.add(attendance.add(employee, now, similarity));
+                double similarity = comparator.compare(probe, read(registered)).score();
+                PhotoScore score = new PhotoScore(employee, registered, similarity);
+                scores.add(score);
+                if (best == null || similarity > best.similarity()) {
+                    best = score;
                 }
             }
         }
 
-        return new PunchResult(scores, records);
+        Optional<AttendanceRecord> record = Optional.ofNullable(best)
+                .filter(score -> score.similarity() >= ImageComparator.THRESHOLD)
+                .map(score -> attendance.add(score.employee(), now, score.similarity()));
+
+        return new PunchResult(scores, record);
     }
 
     public List<AttendanceRecord> recordsOf(Employee employee) {

@@ -5,7 +5,7 @@ final class DistanceMetrics {
     private DistanceMetrics() {
     }
 
-    static double euclidean(int[] reference, int[] current) {
+    static double euclidean(double[] reference, double[] current) {
         double sumOfSquares = 0;
 
         for (int i = 0; i < reference.length; i++) {
@@ -16,7 +16,7 @@ final class DistanceMetrics {
         return Math.sqrt(sumOfSquares);
     }
 
-    static double manhattan(int[] reference, int[] current) {
+    static double manhattan(double[] reference, double[] current) {
         double sum = 0;
 
         for (int i = 0; i < reference.length; i++) {
