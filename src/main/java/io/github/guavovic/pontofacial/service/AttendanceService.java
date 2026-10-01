@@ -50,7 +50,10 @@ public final class AttendanceService {
     }
 
     public PunchResult punch(Path photo) throws IOException {
-        BufferedImage probe = read(photo);
+        return punch(read(photo), photo.getFileName().toString());
+    }
+
+    public PunchResult punch(BufferedImage probe, String source) throws IOException {
         LocalDateTime now = LocalDateTime.now(clock).withNano(0);
         List<PhotoScore> scores = new ArrayList<>();
         PhotoScore best = null;
@@ -71,7 +74,7 @@ public final class AttendanceService {
                 .map(score -> attendance.add(score.employee(), now, score.similarity()));
 
         if (record.isEmpty()) {
-            notices.add(now, unrecognizedMessage(photo, best));
+            notices.add(now, unrecognizedMessage(source, best));
         }
 
         return new PunchResult(scores, record);
@@ -102,11 +105,11 @@ public final class AttendanceService {
         notices.deleteAll();
     }
 
-    private static String unrecognizedMessage(Path photo, PhotoScore best) {
+    private static String unrecognizedMessage(String source, PhotoScore best) {
         if (best == null) {
-            return "Foto " + photo.getFileName() + " não reconhecida: não há funcionário com foto cadastrada.";
+            return "Foto " + source + " não reconhecida: não há funcionário com foto cadastrada.";
         }
-        return String.format(LOCALE, "Foto %s não reconhecida (mais parecido: %s, %.2f%%).", photo.getFileName(),
+        return String.format(LOCALE, "Foto %s não reconhecida (mais parecido: %s, %.2f%%).", source,
                 best.employee().name(), best.similarity() * 100);
     }
 

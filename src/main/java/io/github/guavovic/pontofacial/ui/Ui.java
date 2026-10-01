@@ -12,6 +12,7 @@ import java.awt.event.HierarchyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -222,6 +223,25 @@ final class Ui {
             return List.of();
         }
         return Arrays.stream(chooser.getSelectedFiles()).map(File::toPath).toList();
+    }
+
+    static Path takePhoto(Component parent) {
+        BufferedImage frame = CameraDialog.capture(parent);
+        if (frame == null) {
+            return null;
+        }
+        try {
+            Path folder = Files.createTempDirectory("ponto-facial");
+            Path file = folder.resolve("foto-camera-"
+                    + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")) + ".png");
+            ImageIO.write(frame, "png", file.toFile());
+            file.toFile().deleteOnExit();
+            folder.toFile().deleteOnExit();
+            return file;
+        } catch (IOException e) {
+            showError(parent, "Não foi possível guardar a foto: " + e.getMessage());
+            return null;
+        }
     }
 
     static Path chooseCsv(Component parent, String suggestedName) {
