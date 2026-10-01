@@ -2,11 +2,10 @@
 
 Sistema de ponto que reconhece o funcionário comparando a foto tirada na hora com as fotos cadastradas, e registra a hora de quem foi reconhecido. Tem cadastro de funcionários, registros de ponto, avisos e relatórios.
 
-**Download:** [Releases](https://github.com/guavovic/ponto-facial/releases)
-
-<img src="https://raw.githubusercontent.com/guavovic/ponto-facial/main/docs/assets/ponto-facial.gif" alt="Tela do Ponto Facial reconhecendo dois funcionários e recusando um rosto que não está cadastrado" width="560">
-
-<sub>Rostos de exemplo: avatares do [DiceBear](https://www.dicebear.com) (estilo Lorelei), licença [CC0](https://creativecommons.org/publicdomain/zero/1.0/).</sub>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/guavovic/ponto-facial/main/docs/assets/ponto-facial.gif" alt="Tela do Ponto Facial reconhecendo dois funcionários e recusando um rosto que não está cadastrado" width="560"><br>
+  <sub>Rostos de exemplo: avatares do <a href="https://www.dicebear.com">DiceBear</a> (estilo Lorelei), licença <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0</a>.</sub>
+</p>
 
 ## Como foi feito
 
