@@ -1,6 +1,8 @@
 # Ponto Facial
 
-Sistema de ponto que reconhece o funcionário comparando a foto tirada na hora com as fotos cadastradas, e registra a hora de quem foi reconhecido. Tem cadastro de funcionários, registros de ponto, avisos e relatórios.
+Sistema de ponto que identifica o funcionário comparando a foto tirada na hora com as fotos cadastradas, e registra a hora de quem foi reconhecido. Tem cadastro de funcionários, registros de ponto, avisos e relatórios.
+
+A comparação é da imagem inteira, pixel a pixel, sem detectar rosto nem usar aprendizado de máquina. Por isso o resultado depende de luz e enquadramento parecidos entre o cadastro e a hora do ponto.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/guavovic/ponto-facial/main/docs/assets/ponto-facial.gif" alt="Tela do Ponto Facial reconhecendo dois funcionários e recusando um rosto que não está cadastrado" width="560"><br>
