@@ -3,7 +3,6 @@ package io.github.guavovic.pontofacial.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Insets;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -96,7 +95,7 @@ public final class EmployeeScreen {
         output.setEditable(false);
         output.setLineWrap(true);
         output.setWrapStyleWord(true);
-        output.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+        output.putClientProperty(FlatClientProperties.STYLE_CLASS, "monospaced");
         output.setMargin(new Insets(8, 10, 8, 10));
         output.setText("Clique em Bater ponto para tirar a foto pela câmera\nou em Usar uma foto para escolher um arquivo.\n");
 
