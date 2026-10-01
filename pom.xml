@@ -5,19 +5,19 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.guavovic</groupId>
-    <artifactId>facepoint</artifactId>
+    <artifactId>ponto-facial</artifactId>
     <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>FacePoint</name>
+    <name>Ponto Facial</name>
     <description>Sistema de ponto que reconhece o funcionário comparando a foto com as cadastradas.</description>
-    <url>https://github.com/guavovic/image-comparison-attendance-system</url>
+    <url>https://github.com/guavovic/ponto-facial</url>
 
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <main.class>io.github.guavovic.facepoint.App</main.class>
+        <main.class>io.github.guavovic.pontofacial.App</main.class>
     </properties>
 
     <dependencies>
@@ -40,7 +40,7 @@
     </dependencies>
 
     <build>
-        <finalName>facepoint</finalName>
+        <finalName>ponto-facial</finalName>
 
         <pluginManagement>
             <plugins>

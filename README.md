@@ -32,7 +32,7 @@ Java (Swing, AWT, ImageIO). No external dependencies.
 
 ## How to Open
 
-Maven project, requires JDK 25. Build with `./mvnw package` and run `java -jar target/facepoint.jar` (add `--admin` for the management screen). Data is kept in a `data/` folder next to the jar.
+Maven project, requires JDK 25. Build with `./mvnw package` and run `java -jar target/ponto-facial.jar` (add `--admin` for the management screen). Data is kept in a `data/` folder next to the jar.
 
 ## Known Limitations
 
