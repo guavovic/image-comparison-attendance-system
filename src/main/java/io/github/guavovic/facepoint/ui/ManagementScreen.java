@@ -1,10 +1,9 @@
 package io.github.guavovic.facepoint.ui;
 
-import java.awt.Container;
-import java.awt.Font;
+import java.awt.GridLayout;
 
 import javax.swing.JFrame;
-import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import io.github.guavovic.facepoint.service.Services;
 import io.github.guavovic.facepoint.storage.StorageException;
@@ -16,24 +15,19 @@ public final class ManagementScreen {
 
     public ManagementScreen(Services services) {
         this.services = services;
-        this.frame = Ui.frame("Tela de Gerenciamento", 816, 472, JFrame.EXIT_ON_CLOSE);
-        build(frame.getContentPane());
+
+        JPanel tiles = new JPanel(new GridLayout(2, 2, 14, 14));
+        tiles.add(Ui.tile("Pontos", "Ver e remover os registros", e -> guard(() -> RecordsScreen.forEveryone(services.attendance()).open())));
+        tiles.add(Ui.tile("Funcionários", "Adicionar, editar e remover", e -> new EmployeesScreen(services).open()));
+        tiles.add(Ui.tile("Avisos", "Fotos que não foram reconhecidas", e -> guard(() -> new NoticesScreen(services.attendance()).open())));
+        tiles.add(Ui.tile("Relatório", "Pontos em planilha CSV", e -> guard(() -> new AttendanceReportScreen(services).open())));
+
+        frame = Ui.screen("FacePoint - Gerenciamento", "FacePoint", "Gerenciamento", Ui.clock(), tiles,
+                Ui.actions(Ui.button("Sair", e -> System.exit(0))), JFrame.EXIT_ON_CLOSE);
     }
 
     public void open() {
         frame.setVisible(true);
-    }
-
-    private void build(Container content) {
-        content.add(Ui.clock(660, 408));
-        content.add(Ui.button("SAIR", 710, 40, 60, 23, e -> System.exit(0)));
-        content.add(Ui.button("Gerenciamento de Pontos", 514, 40, 166, 23, e -> guard(() -> RecordsScreen.forEveryone(services.attendance()).open())));
-        content.add(Ui.button("Gerenciamento de Acessos", 330, 40, 174, 23, e -> new AccessManagementScreen(services).open()));
-        content.add(Ui.button("Lista de Avisos", 206, 40, 114, 23, e -> guard(() -> new NoticesScreen(services.attendance()).open())));
-        content.add(Ui.button("Gerar Relatorio", 82, 40, 114, 23, e -> guard(() -> new AttendanceReportScreen(services).open())));
-        Ui.addLogo(content);
-        Ui.addBars(content, 800, 49, 400, 33);
-        addCenterLogo(content, 330);
     }
 
     private void guard(Runnable action) {
@@ -42,13 +36,5 @@ public final class ManagementScreen {
         } catch (StorageException e) {
             Ui.showError(frame, e.getMessage());
         }
-    }
-
-    static void addCenterLogo(Container content, int x) {
-        Ui.addLogo(content, 26, x, 193, 136, 23, x + 2, 186, 40);
-        JLabel underline = new JLabel("_____________");
-        underline.setFont(new Font("Tahoma", Font.BOLD, 16));
-        underline.setBounds(x, 205, 136, 23);
-        content.add(underline);
     }
 }

@@ -1,13 +1,14 @@
 package io.github.guavovic.facepoint.ui;
 
-import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.time.LocalDateTime;
 import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import io.github.guavovic.facepoint.domain.Notice;
 import io.github.guavovic.facepoint.service.AttendanceService;
@@ -17,39 +18,41 @@ final class NoticesScreen {
 
     private final AttendanceService attendance;
     private final JFrame frame;
-    private final JList<String> list = new JList<>();
+    private final NoticesModel model = new NoticesModel();
 
     NoticesScreen(AttendanceService attendance) {
         this.attendance = attendance;
 
-        frame = new JFrame(" Lista de Avisos");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(640, 400);
-        frame.setLocationRelativeTo(null);
+        JTable table = new JTable(model);
+        table.setFillsViewportHeight(true);
+        table.setRowHeight(26);
+        table.getColumnModel().getColumn(0).setPreferredWidth(150);
+        table.getColumnModel().getColumn(0).setMaxWidth(190);
+        table.getColumnModel().getColumn(1).setPreferredWidth(480);
+        table.setDefaultRenderer(LocalDateTime.class, new DefaultTableCellRenderer() {
+            private static final long serialVersionUID = 1L;
 
-        JButton clear = new JButton("Limpar avisos");
-        clear.addActionListener(e -> clear());
-        JPanel bottom = new JPanel();
-        bottom.add(clear);
+            @Override
+            protected void setValue(Object value) {
+                setText(value == null ? "" : ((LocalDateTime) value).format(Ui.DATE_TIME));
+            }
+        });
 
-        frame.getContentPane().add(new JScrollPane(list), BorderLayout.CENTER);
-        frame.getContentPane().add(bottom, BorderLayout.SOUTH);
-        reload();
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setPreferredSize(new Dimension(700, 340));
+
+        frame = Ui.screen("FacePoint - Avisos", "FacePoint", "Fotos que não foram reconhecidas", null, scroll,
+                Ui.actions(null, Ui.button("Limpar avisos", e -> clear()), Ui.button("Fechar", e -> frame().dispose())),
+                JFrame.DISPOSE_ON_CLOSE);
+        model.set(attendance.notices());
     }
 
     void open() {
         frame.setVisible(true);
     }
 
-    private void reload() {
-        List<Notice> notices = attendance.notices();
-        if (notices.isEmpty()) {
-            list.setListData(new String[] { "  Nenhum aviso. Fotos não reconhecidas aparecem aqui." });
-            return;
-        }
-        list.setListData(notices.stream()
-                .map(notice -> "  " + notice.createdAt().format(Ui.DATE_TIME) + "   " + notice.message())
-                .toArray(String[]::new));
+    private JFrame frame() {
+        return frame;
     }
 
     private void clear() {
@@ -58,9 +61,47 @@ final class NoticesScreen {
         }
         try {
             attendance.clearNotices();
-            reload();
+            model.set(attendance.notices());
         } catch (StorageException e) {
             Ui.showError(frame, e.getMessage());
+        }
+    }
+
+    private static final class NoticesModel extends AbstractTableModel {
+
+        private static final long serialVersionUID = 1L;
+
+        private transient List<Notice> notices = List.of();
+
+        void set(List<Notice> newNotices) {
+            notices = newNotices;
+            fireTableDataChanged();
+        }
+
+        @Override
+        public int getRowCount() {
+            return notices.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return 2;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return column == 0 ? "Data e hora" : "Aviso";
+        }
+
+        @Override
+        public Class<?> getColumnClass(int column) {
+            return column == 0 ? LocalDateTime.class : String.class;
+        }
+
+        @Override
+        public Object getValueAt(int row, int column) {
+            Notice notice = notices.get(row);
+            return column == 0 ? notice.createdAt() : notice.message();
         }
     }
 }
