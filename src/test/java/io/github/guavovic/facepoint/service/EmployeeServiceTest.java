@@ -50,6 +50,16 @@ class EmployeeServiceTest {
     }
 
     @Test
+    @DisplayName("devolve a primeira foto do funcionário, ou nada se não tiver")
+    void firstPhoto() {
+        Employee employee = service.register("Maria", "Manhã", "Caixa", List.of(photo));
+
+        assertEquals(folder.resolve("photos").resolve(Long.toString(employee.id())).resolve("ana-souza.png"),
+                service.firstPhoto(employee).orElseThrow());
+        assertTrue(service.firstPhoto(new Employee(999, "Ninguém", "Noite", "Vigia")).isEmpty());
+    }
+
+    @Test
     @DisplayName("recusa nome, turno e função vazios")
     void refusesBlankFields() {
         ValidationException name = assertThrows(ValidationException.class,

@@ -1,7 +1,6 @@
 package io.github.guavovic.facepoint.ui;
 
-import java.awt.Container;
-
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 
@@ -17,9 +16,13 @@ final class RemoveEmployeeScreen {
 
     RemoveEmployeeScreen(EmployeeService employees) {
         this.employees = employees;
-        this.combo = Ui.employeeCombo(employees.list(), 140, 80, 170);
-        this.frame = Ui.frame("Remover Funcionario", 351, 243, JFrame.DISPOSE_ON_CLOSE);
-        build(frame.getContentPane());
+        this.combo = Ui.employeeCombo(employees.list());
+
+        Form form = new Form().row("Funcionário", combo);
+        JButton remove = Ui.button("Remover", e -> remove());
+
+        frame = Ui.screen("FacePoint - Remover funcionário", "FacePoint", "Remover funcionário", null, form,
+                Ui.actions(null, Ui.button("Cancelar", e -> frame().dispose()), remove), JFrame.DISPOSE_ON_CLOSE);
     }
 
     boolean hasEmployees() {
@@ -30,14 +33,8 @@ final class RemoveEmployeeScreen {
         frame.setVisible(true);
     }
 
-    private void build(Container content) {
-        Ui.addLogo(content);
-        Ui.addBars(content, 335, 16, 182, 23);
-
-        content.add(Ui.fieldLabel("Funcionário:", 30, 80, 100));
-        content.add(combo);
-        content.add(Ui.button("Remover", 70, 135, 87, 23, e -> remove()));
-        content.add(Ui.button("Cancelar", 177, 135, 87, 23, e -> frame.dispose()));
+    private JFrame frame() {
+        return frame;
     }
 
     private void remove() {

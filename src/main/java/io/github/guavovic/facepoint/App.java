@@ -21,6 +21,7 @@ import io.github.guavovic.facepoint.storage.SampleData;
 import io.github.guavovic.facepoint.storage.StorageException;
 import io.github.guavovic.facepoint.ui.EmployeeScreen;
 import io.github.guavovic.facepoint.ui.ManagementScreen;
+import io.github.guavovic.facepoint.ui.Theme;
 
 public final class App {
 
@@ -29,7 +30,10 @@ public final class App {
 
     public static void main(String[] args) {
         boolean management = Arrays.asList(args).contains("--admin");
-        SwingUtilities.invokeLater(() -> start(management));
+        SwingUtilities.invokeLater(() -> {
+            Theme.install();
+            start(management);
+        });
     }
 
     private static void start(boolean management) {
@@ -43,12 +47,12 @@ public final class App {
             AttendanceService attendance = new AttendanceService(employees, new AttendanceRepository(database),
                     new NoticeRepository(database), photos, new ImageComparator(), Clock.systemDefaultZone());
 
+            Services services = new Services(attendance, new EmployeeService(employees, photos),
+                    new ReportService());
             if (management) {
-                Services services = new Services(attendance, new EmployeeService(employees, photos),
-                        new ReportService());
                 new ManagementScreen(services).open();
             } else {
-                new EmployeeScreen(attendance, data.testPhotos()).open();
+                new EmployeeScreen(services, data.testPhotos()).open();
             }
         } catch (StorageException e) {
             JOptionPane.showMessageDialog(null, e.getMessage(), "FacePoint", JOptionPane.ERROR_MESSAGE);

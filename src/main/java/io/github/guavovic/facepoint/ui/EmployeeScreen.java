@@ -1,43 +1,63 @@
 package io.github.guavovic.facepoint.ui;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import com.formdev.flatlaf.FlatClientProperties;
 
 import io.github.guavovic.facepoint.domain.AttendanceRecord;
 import io.github.guavovic.facepoint.domain.Employee;
-import io.github.guavovic.facepoint.service.AttendanceService;
 import io.github.guavovic.facepoint.service.AttendanceService.PhotoScore;
 import io.github.guavovic.facepoint.service.AttendanceService.PunchResult;
+import io.github.guavovic.facepoint.service.Services;
 import io.github.guavovic.facepoint.storage.PhotoStore;
 import io.github.guavovic.facepoint.storage.StorageException;
 
 public final class EmployeeScreen {
 
-    private final AttendanceService attendance;
+    private static final int PHOTO_SIZE = 160;
+
+    private final Services services;
     private final Path testPhotos;
     private final JFrame frame;
-    private final JTextArea output = new JTextArea();
-    private final JLabel nameLabel = infoLabel(89);
-    private final JLabel shiftLabel = infoLabel(128);
-    private final JLabel roleLabel = infoLabel(167);
-    private final JLabel idLabel = infoLabel(206);
+    private final JTextArea output = new JTextArea(12, 34);
+    private final JLabel photo = new JLabel("Sem foto", SwingConstants.CENTER);
+    private final JLabel name = new JLabel();
+    private final JLabel shift = new JLabel();
+    private final JLabel role = new JLabel();
+    private final JLabel id = new JLabel();
     private Employee current;
 
-    public EmployeeScreen(AttendanceService attendance, Path testPhotos) {
-        this.attendance = attendance;
+    public EmployeeScreen(Services services, Path testPhotos) {
+        this.services = services;
         this.testPhotos = testPhotos;
-        this.frame = Ui.frame("Tela do Funcionário", 638, 350, JFrame.EXIT_ON_CLOSE);
-        build(frame.getContentPane());
+
+        JButton punch = Ui.button("Bater ponto", e -> punch());
+        JButton records = Ui.button("Meus registros", e -> openRecords());
+        JButton exit = Ui.button("Sair", e -> System.exit(0));
+
+        frame = Ui.screen("FacePoint", "FacePoint", "Registro de ponto", Ui.clock(), body(),
+                Ui.actions(exit, records, punch), JFrame.EXIT_ON_CLOSE);
+        Ui.primary(frame, punch);
         show(null);
     }
 
@@ -45,26 +65,42 @@ public final class EmployeeScreen {
         frame.setVisible(true);
     }
 
-    private void build(Container content) {
-        output.setForeground(Color.WHITE);
-        output.setBackground(Color.BLACK);
+    private JPanel body() {
+        photo.setPreferredSize(new Dimension(PHOTO_SIZE, PHOTO_SIZE));
+        photo.setMaximumSize(new Dimension(PHOTO_SIZE, PHOTO_SIZE));
+        photo.setAlignmentX(0);
+        photo.setForeground(Color.GRAY);
+        photo.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor")));
+
+        name.putClientProperty(FlatClientProperties.STYLE_CLASS, "h3");
+        name.setAlignmentX(0);
+        for (JLabel label : new JLabel[] { shift, role, id }) {
+            label.setAlignmentX(0);
+        }
+
+        JPanel employee = new JPanel();
+        employee.setLayout(new BoxLayout(employee, BoxLayout.Y_AXIS));
+        employee.setPreferredSize(new Dimension(PHOTO_SIZE + 20, 290));
+        employee.add(photo);
+        employee.add(Box.createVerticalStrut(12));
+        employee.add(name);
+        employee.add(Box.createVerticalStrut(4));
+        employee.add(shift);
+        employee.add(role);
+        employee.add(id);
+        employee.add(Box.createVerticalGlue());
+
         output.setEditable(false);
-        output.setText("\n Clique em Bater Ponto e escolha a foto.\n");
-        JScrollPane scroll = new JScrollPane(output);
-        scroll.setBounds(289, 92, 317, 175);
-        content.add(scroll);
+        output.setLineWrap(true);
+        output.setWrapStyleWord(true);
+        output.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+        output.setMargin(new Insets(8, 10, 8, 10));
+        output.setText("Clique em Bater ponto e escolha a foto.\n");
 
-        content.add(Ui.clock(475, 286));
-        content.add(Ui.button("SAIR", 540, 40, 60, 23, e -> System.exit(0)));
-        content.add(Ui.button("Registros", 420, 40, 89, 23, e -> openRecords()));
-        content.add(Ui.button("Bater Ponto", 306, 40, 104, 23, e -> punch()));
-
-        content.add(nameLabel);
-        Ui.addLogo(content);
-        Ui.addBars(content, 622, 49, 278, 33);
-        content.add(shiftLabel);
-        content.add(roleLabel);
-        content.add(idLabel);
+        JPanel body = new JPanel(new BorderLayout(24, 0));
+        body.add(employee, BorderLayout.WEST);
+        body.add(new JScrollPane(output), BorderLayout.CENTER);
+        return body;
     }
 
     private void punch() {
@@ -76,40 +112,36 @@ public final class EmployeeScreen {
             return;
         }
 
-        Path photo = chooser.getSelectedFile().toPath();
-        output.append("\n Foto: " + photo.getFileName() + "\n");
-        output.append("\n ----------------------------------------\n");
+        Path file = chooser.getSelectedFile().toPath();
+        output.setText("Foto: " + file.getFileName() + "\n\n");
 
         try {
-            PunchResult result = attendance.punch(photo);
+            PunchResult result = services.attendance().punch(file);
             for (PhotoScore score : result.scores()) {
-                output.append(String.format(Ui.LOCALE, "%n %s: %.2f%%%n", score.employee().name(),
+                output.append(String.format(Ui.LOCALE, "%-24s %6.2f%%%n", score.employee().name(),
                         score.similarity() * 100));
             }
             if (result.record().isEmpty()) {
-                output.append("\n Funcionário não reconhecido.\n Ponto não registrado.\n");
+                output.append("\nFuncionário não reconhecido.\nPonto não registrado.\n");
+                show(null);
             } else {
                 AttendanceRecord record = result.record().get();
-                output.append("\n  ( OK - Ponto registrado: " + record.employee().name() + " )\n");
-                output.append("\n =================================");
-                output.append("\n  Validação de ponto finalizada!");
-                output.append("\n =================================\n");
+                output.append("\nPonto registrado: " + record.employee().name() + "\n");
                 show(record.employee());
             }
         } catch (IOException | StorageException e) {
             Ui.showError(frame, e.getMessage());
         }
-        output.setCaretPosition(output.getDocument().getLength());
+        output.setCaretPosition(0);
     }
 
     private void openRecords() {
         if (current == null) {
-            JOptionPane.showMessageDialog(frame, "Bata o ponto primeiro para ver os seus registros.", "FacePoint",
-                    JOptionPane.INFORMATION_MESSAGE);
+            Ui.showInfo(frame, "Bata o ponto primeiro para ver os seus registros.");
             return;
         }
         try {
-            RecordsScreen.forEmployee(current, attendance).open();
+            RecordsScreen.forEmployee(current, services.attendance()).open();
         } catch (StorageException e) {
             Ui.showError(frame, e.getMessage());
         }
@@ -117,17 +149,25 @@ public final class EmployeeScreen {
 
     private void show(Employee employee) {
         current = employee;
-        nameLabel.setText("Nome: " + (employee == null ? "" : employee.name()));
-        shiftLabel.setText("Turno: " + (employee == null ? "" : employee.shift()));
-        roleLabel.setText("Função: " + (employee == null ? "" : employee.role()));
-        idLabel.setText("ID: " + (employee == null ? "" : employee.id()));
-    }
+        if (employee == null) {
+            name.setText("Ninguém identificado");
+            name.setForeground(Color.GRAY);
+            shift.setText(" ");
+            role.setText(" ");
+            id.setText(" ");
+            photo.setIcon(null);
+            photo.setText("Sem foto");
+            return;
+        }
+        name.setText(employee.name());
+        name.setForeground(UIManager.getColor("Label.foreground"));
+        shift.setText("Turno: " + employee.shift());
+        role.setText("Função: " + employee.role());
+        id.setText("ID: " + employee.id());
 
-    private static JLabel infoLabel(int y) {
-        JLabel label = new JLabel();
-        label.setForeground(Color.BLACK);
-        label.setFont(Ui.LABEL_FONT);
-        label.setBounds(20, y, 259, 28);
-        return label;
+        var icon = services.employees().firstPhoto(employee).map(file -> Ui.thumbnail(file, PHOTO_SIZE - 2))
+                .orElse(null);
+        photo.setIcon(icon);
+        photo.setText(icon == null ? "Sem foto" : null);
     }
 }

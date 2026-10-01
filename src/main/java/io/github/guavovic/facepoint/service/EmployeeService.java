@@ -3,6 +3,7 @@ package io.github.guavovic.facepoint.service;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import javax.imageio.ImageIO;
 
@@ -26,6 +27,10 @@ public final class EmployeeService {
 
     public int photoCount(Employee employee) {
         return photos.photosOf(employee).size();
+    }
+
+    public Optional<Path> firstPhoto(Employee employee) {
+        return photos.photosOf(employee).stream().findFirst();
     }
 
     public Employee register(String name, String shift, String role, List<Path> newPhotos) {

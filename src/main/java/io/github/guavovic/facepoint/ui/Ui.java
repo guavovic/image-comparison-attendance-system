@@ -1,10 +1,17 @@
 package io.github.guavovic.facepoint.ui;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.Font;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,9 +22,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,19 +39,16 @@ import javax.swing.JTextField;
 import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.formdev.flatlaf.FlatClientProperties;
+
 import io.github.guavovic.facepoint.domain.Employee;
 import io.github.guavovic.facepoint.storage.PhotoStore;
 
 final class Ui {
 
-    static final Color BAR = new Color(74, 149, 149);
-    static final Color TOOLBAR = new Color(106, 181, 181);
-    static final Color LOGO = new Color(0, 128, 64);
-    static final Color LOGO_SHADOW = new Color(154, 214, 181);
+    private static final int MIN_WIDTH = 420;
 
-    static final Font BUTTON_FONT = new Font("Tahoma", Font.BOLD, 10);
-    static final Font LABEL_FONT = new Font("Tahoma", Font.BOLD, 12);
-    static final Font FIELD_LABEL_FONT = new Font("Tahoma", Font.BOLD, 14);
+    static final Color ACCENT = new Color(0x2F8F8F);
 
     static final Locale LOCALE = Locale.forLanguageTag("pt-BR");
 
@@ -49,94 +57,118 @@ final class Ui {
 
     static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy  HH:mm:ss");
 
+    static final List<String> SHIFTS = List.of("Manhã", "Tarde", "Noite");
+
     private Ui() {
     }
 
-    static JFrame frame(String title, int width, int height, int closeOperation) {
-        JFrame frame = new JFrame(" " + title);
-        frame.getContentPane().setBackground(Color.WHITE);
-        frame.setSize(width, height);
+    static JFrame screen(String title, String heading, String subtitle, JComponent east, JComponent body,
+            JComponent actions, int closeOperation) {
+        JPanel root = new JPanel(new BorderLayout());
+        root.add(header(heading, subtitle, east), BorderLayout.NORTH);
+
+        body.setBorder(BorderFactory.createEmptyBorder(20, 24, 12, 24));
+        root.add(body, BorderLayout.CENTER);
+
+        if (actions != null) {
+            actions.setBorder(BorderFactory.createEmptyBorder(0, 24, 16, 24));
+            root.add(actions, BorderLayout.SOUTH);
+        }
+
+        JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(closeOperation);
-        frame.getContentPane().setLayout(null);
+        frame.setContentPane(root);
+        frame.pack();
+        frame.setSize(Math.max(frame.getWidth(), MIN_WIDTH), frame.getHeight());
+        frame.setMinimumSize(frame.getSize());
         frame.setLocationRelativeTo(null);
-        frame.setResizable(false);
         return frame;
     }
 
-    static void addLogo(Container container) {
-        addLogo(container, 16, 20, 5, 93, 23, 23, 7, 23);
-    }
+    private static JPanel header(String heading, String subtitle, JComponent east) {
+        JLabel title = new JLabel(heading);
+        title.putClientProperty(FlatClientProperties.STYLE_CLASS, "h2");
+        title.setForeground(Color.WHITE);
 
-    static void addLogo(Container container, int size, int x, int y, int width, int height, int logoX, int logoY,
-            int logoHeight) {
-        JLabel shadow = new JLabel("FacePoint");
-        shadow.setForeground(LOGO_SHADOW);
-        shadow.setFont(new Font("Tahoma", Font.BOLD, size));
-        shadow.setBounds(x, y, width, height);
-        container.add(shadow);
+        JLabel sub = new JLabel(subtitle);
+        sub.setForeground(new Color(0xD9EFEF));
 
-        JLabel logo = new JLabel("FacePoint");
-        logo.setForeground(LOGO);
-        logo.setFont(new Font("Tahoma", Font.BOLD, size));
-        logo.setBounds(logoX, logoY, width, logoHeight);
-        container.add(logo);
-    }
+        JPanel texts = new JPanel(new BorderLayout());
+        texts.setOpaque(false);
+        texts.add(title, BorderLayout.NORTH);
+        texts.add(sub, BorderLayout.SOUTH);
 
-    static void addBars(Container container, int width, int toolbarHeight, int footerY, int footerHeight) {
-        container.add(panel(BAR, 0, 0, width, 33));
-        container.add(panel(BAR, 0, footerY, width, footerHeight));
-        container.add(panel(TOOLBAR, 0, 29, width, toolbarHeight));
-    }
-
-    static JButton button(String text, int x, int y, int width, int height, ActionListener action) {
-        JButton button = new JButton(text);
-        button.setFont(BUTTON_FONT);
-        button.setBounds(x, y, width, height);
-        if (action != null) {
-            button.addActionListener(action);
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(ACCENT);
+        header.setBorder(BorderFactory.createEmptyBorder(14, 24, 14, 24));
+        header.add(texts, BorderLayout.WEST);
+        if (east != null) {
+            east.setForeground(Color.WHITE);
+            header.add(east, BorderLayout.EAST);
         }
+        return header;
+    }
+
+    static JPanel actions(JComponent left, JComponent... right) {
+        JPanel panel = new JPanel(new BorderLayout());
+        if (left != null) {
+            panel.add(left, BorderLayout.WEST);
+        }
+        JPanel group = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        for (JComponent component : right) {
+            group.add(component);
+        }
+        panel.add(group, BorderLayout.EAST);
+        return panel;
+    }
+
+    static JButton button(String text, ActionListener action) {
+        JButton button = new JButton(text);
+        button.addActionListener(action);
         return button;
     }
 
-    static JLabel clock(int x, int y) {
+    static JButton primary(JFrame frame, JButton button) {
+        frame.getRootPane().setDefaultButton(button);
+        return button;
+    }
+
+    static JButton tile(String title, String description, ActionListener action) {
+        JButton button = new JButton("<html><b>" + title + "</b><br><span style='color:gray'>" + description
+                + "</span></html>");
+        button.setHorizontalAlignment(JButton.LEFT);
+        button.setMargin(new Insets(14, 16, 14, 16));
+        button.setPreferredSize(new Dimension(230, 76));
+        button.addActionListener(action);
+        return button;
+    }
+
+    static JLabel clock() {
         JLabel label = new JLabel();
-        label.setFont(new Font("Arial", Font.BOLD, 13));
-        label.setBounds(x, y, 124, 17);
         Timer timer = new Timer(1000, e -> label.setText(LocalDateTime.now().format(DATE_TIME)));
         timer.setInitialDelay(0);
         timer.start();
+        label.addHierarchyListener(e -> {
+            boolean changed = (e.getChangeFlags() & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0;
+            if (changed && !label.isDisplayable()) {
+                timer.stop();
+            }
+        });
         return label;
     }
 
-    static void showError(Component parent, String message) {
-        JOptionPane.showMessageDialog(parent, message, "FacePoint", JOptionPane.ERROR_MESSAGE);
+    static JTextField field(int columns) {
+        return new JTextField(columns);
     }
 
-    static void showInfo(Component parent, String message) {
-        JOptionPane.showMessageDialog(parent, message, "FacePoint", JOptionPane.INFORMATION_MESSAGE);
+    static JComboBox<String> shiftCombo() {
+        JComboBox<String> combo = new JComboBox<>(SHIFTS.toArray(String[]::new));
+        combo.setEditable(true);
+        return combo;
     }
 
-    static boolean confirm(Component parent, String message) {
-        return JOptionPane.showConfirmDialog(parent, message, "FacePoint", JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
-    }
-
-    static JLabel fieldLabel(String text, int x, int y, int width) {
-        JLabel label = new JLabel(text);
-        label.setFont(FIELD_LABEL_FONT);
-        label.setBounds(x, y, width, 20);
-        return label;
-    }
-
-    static JTextField textField(int x, int y, int width) {
-        JTextField field = new JTextField(10);
-        field.setBounds(x, y, width, 25);
-        return field;
-    }
-
-    static JComboBox<Employee> employeeCombo(List<Employee> employees, int x, int y, int width) {
+    static JComboBox<Employee> employeeCombo(List<Employee> employees) {
         JComboBox<Employee> combo = new JComboBox<>(employees.toArray(Employee[]::new));
-        combo.setBounds(x, y, width, 25);
         combo.setRenderer(new DefaultListCellRenderer() {
             private static final long serialVersionUID = 1L;
 
@@ -155,6 +187,31 @@ final class Ui {
         return combo;
     }
 
+    static ImageIcon thumbnail(Path photo, int size) {
+        try {
+            BufferedImage image = ImageIO.read(photo.toFile());
+            if (image == null) {
+                return null;
+            }
+            return new ImageIcon(image.getScaledInstance(size, size, Image.SCALE_SMOOTH));
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    static void showError(Component parent, String message) {
+        JOptionPane.showMessageDialog(parent, message, "FacePoint", JOptionPane.ERROR_MESSAGE);
+    }
+
+    static void showInfo(Component parent, String message) {
+        JOptionPane.showMessageDialog(parent, message, "FacePoint", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    static boolean confirm(Component parent, String message) {
+        return JOptionPane.showConfirmDialog(parent, message, "FacePoint", JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
+    }
+
     static List<Path> chooseImages(Component parent, Path startFolder) {
         JFileChooser chooser = new JFileChooser(startFolder == null ? null : startFolder.toFile());
         chooser.setDialogTitle("Escolha as fotos");
@@ -164,13 +221,13 @@ final class Ui {
         if (chooser.showOpenDialog(parent) != JFileChooser.APPROVE_OPTION) {
             return List.of();
         }
-        return Arrays.stream(chooser.getSelectedFiles()).map(java.io.File::toPath).toList();
+        return Arrays.stream(chooser.getSelectedFiles()).map(File::toPath).toList();
     }
 
     static Path chooseCsv(Component parent, String suggestedName) {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Salvar relatório");
-        chooser.setSelectedFile(new java.io.File(suggestedName));
+        chooser.setSelectedFile(new File(suggestedName));
         chooser.setFileFilter(new FileNameExtensionFilter("Planilha CSV", "csv"));
         if (chooser.showSaveDialog(parent) != JFileChooser.APPROVE_OPTION) {
             return null;
@@ -194,12 +251,5 @@ final class Ui {
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Data inválida: " + text.strip() + ". Use o formato dd/mm/aaaa.");
         }
-    }
-
-    private static JPanel panel(Color color, int x, int y, int width, int height) {
-        JPanel panel = new JPanel();
-        panel.setBackground(color);
-        panel.setBounds(x, y, width, height);
-        return panel;
     }
 }

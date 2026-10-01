@@ -1,21 +1,27 @@
 package io.github.guavovic.facepoint.ui;
 
 import java.awt.BorderLayout;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.RowFilter;
+import javax.swing.SortOrder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableRowSorter;
+
+import com.formdev.flatlaf.FlatClientProperties;
 
 import io.github.guavovic.facepoint.domain.AttendanceRecord;
 import io.github.guavovic.facepoint.domain.Employee;
@@ -25,76 +31,85 @@ import io.github.guavovic.facepoint.storage.StorageException;
 final class RecordsScreen {
 
     private final JFrame frame;
-    private final JList<String> list = new JList<>();
-    private final JTextField search = new JTextField(20);
+    private final JTable table = new JTable();
+    private final JTextField search = Ui.field(20);
     private final Supplier<List<AttendanceRecord>> loader;
-    private final Function<AttendanceRecord, String> describe;
     private final Consumer<AttendanceRecord> deleter;
-    private List<AttendanceRecord> records = new ArrayList<>();
-    private List<AttendanceRecord> visible = List.of();
-    private boolean reversed;
+    private final boolean showEmployee;
+    private final RecordsModel model = new RecordsModel();
+    private final TableRowSorter<RecordsModel> sorter = new TableRowSorter<>(model);
 
-    private RecordsScreen(String title, Supplier<List<AttendanceRecord>> loader,
-            Function<AttendanceRecord, String> describe, Consumer<AttendanceRecord> deleter) {
+    private RecordsScreen(String title, String subtitle, boolean showEmployee,
+            Supplier<List<AttendanceRecord>> loader, Consumer<AttendanceRecord> deleter) {
+        this.showEmployee = showEmployee;
         this.loader = loader;
-        this.describe = describe;
         this.deleter = deleter;
 
-        frame = new JFrame(" " + title);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(400, 500);
-        frame.setLocationRelativeTo(null);
-        frame.setResizable(false);
+        table.setModel(model);
+        table.setRowSorter(sorter);
+        table.setFillsViewportHeight(true);
+        table.setRowHeight(26);
+        table.setDefaultRenderer(LocalDateTime.class, new DefaultTableCellRenderer() {
+            private static final long serialVersionUID = 1L;
 
+            @Override
+            protected void setValue(Object value) {
+                setText(value == null ? "" : ((LocalDateTime) value).format(Ui.DATE_TIME));
+            }
+        });
+        table.setDefaultRenderer(Double.class, new DefaultTableCellRenderer() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected void setValue(Object value) {
+                setText(value == null ? "" : String.format(Ui.LOCALE, "%.2f%%", (Double) value * 100));
+            }
+        });
+        sorter.setSortKeys(List.of(new TableRowSorter.SortKey(0, SortOrder.DESCENDING)));
+
+        search.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Buscar por nome ou data");
         search.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                refresh();
+                applyFilter();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                refresh();
+                applyFilter();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                refresh();
+                applyFilter();
             }
         });
 
-        JButton reverse = new JButton("Inverter Ordem");
-        reverse.addActionListener(e -> {
-            reversed = !reversed;
-            refresh();
-        });
+        JPanel body = new JPanel(new BorderLayout(0, 12));
+        body.add(search, BorderLayout.NORTH);
+        body.add(new JScrollPane(table), BorderLayout.CENTER);
+        body.setPreferredSize(new java.awt.Dimension(560, 380));
 
-        JPanel searchPanel = new JPanel();
-        searchPanel.add(search);
-        searchPanel.add(reverse);
-
-        frame.getContentPane().add(searchPanel, BorderLayout.NORTH);
-        frame.getContentPane().add(new JScrollPane(list), BorderLayout.CENTER);
-
+        JPanel actions;
+        JButton close = Ui.button("Fechar", e -> frame().dispose());
         if (deleter != null) {
-            JButton delete = new JButton("Remover registro selecionado");
-            delete.addActionListener(e -> deleteSelected());
-            JPanel bottom = new JPanel();
-            bottom.add(delete);
-            frame.getContentPane().add(bottom, BorderLayout.SOUTH);
+            actions = Ui.actions(null, Ui.button("Remover registro selecionado", e -> deleteSelected()), close);
+        } else {
+            actions = Ui.actions(null, close);
         }
 
+        frame = Ui.screen("FacePoint - " + title, "FacePoint", subtitle, null, body, actions,
+                JFrame.DISPOSE_ON_CLOSE);
         reload();
     }
 
     static RecordsScreen forEmployee(Employee employee, AttendanceService attendance) {
-        return new RecordsScreen("Registros de " + employee.name(), () -> attendance.recordsOf(employee),
-                record -> record.recordedAt().format(Ui.DATE_TIME), null);
+        return new RecordsScreen("Registros de " + employee.name(), "Registros de " + employee.name(), false,
+                () -> attendance.recordsOf(employee), null);
     }
 
     static RecordsScreen forEveryone(AttendanceService attendance) {
-        return new RecordsScreen("Registros de ponto", attendance::allRecords,
-                record -> record.recordedAt().format(Ui.DATE_TIME) + "   " + record.employee().name(),
+        return new RecordsScreen("Registros de ponto", "Registros de ponto", true, attendance::allRecords,
                 attendance::deleteRecord);
     }
 
@@ -102,34 +117,33 @@ final class RecordsScreen {
         frame.setVisible(true);
     }
 
-    private void reload() {
-        records = new ArrayList<>(loader.get());
-        refresh();
+    private JFrame frame() {
+        return frame;
     }
 
-    private void refresh() {
-        String term = search.getText().toLowerCase(Ui.LOCALE);
-        List<AttendanceRecord> shown = new ArrayList<>(records);
-        if (reversed) {
-            Collections.reverse(shown);
-        }
-        shown = shown.stream().filter(record -> describe.apply(record).toLowerCase(Ui.LOCALE).contains(term))
-                .toList();
-        visible = shown;
-        String[] lines = new String[shown.size()];
-        for (int i = 0; i < lines.length; i++) {
-            lines[i] = (i + 1) + "   " + describe.apply(shown.get(i));
-        }
-        list.setListData(lines);
+    private void reload() {
+        model.set(loader.get());
+    }
+
+    private void applyFilter() {
+        String term = search.getText().strip().toLowerCase(Ui.LOCALE);
+        sorter.setRowFilter(term.isEmpty() ? null : new RowFilter<RecordsModel, Integer>() {
+            @Override
+            public boolean include(Entry<? extends RecordsModel, ? extends Integer> entry) {
+                AttendanceRecord record = model.records.get(entry.getIdentifier());
+                String text = record.recordedAt().format(Ui.DATE_TIME) + " " + record.employee().name();
+                return text.toLowerCase(Ui.LOCALE).contains(term);
+            }
+        });
     }
 
     private void deleteSelected() {
-        int index = list.getSelectedIndex();
-        if (index < 0) {
-            Ui.showInfo(frame, "Selecione um registro na lista.");
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            Ui.showInfo(frame, "Selecione um registro na tabela.");
             return;
         }
-        AttendanceRecord record = visible.get(index);
+        AttendanceRecord record = model.records.get(table.convertRowIndexToModel(row));
         if (!Ui.confirm(frame, "Remover o ponto de " + record.employee().name() + " em "
                 + record.recordedAt().format(Ui.DATE_TIME) + "?")) {
             return;
@@ -139,6 +153,56 @@ final class RecordsScreen {
             reload();
         } catch (StorageException e) {
             Ui.showError(frame, e.getMessage());
+        }
+    }
+
+    private final class RecordsModel extends AbstractTableModel {
+
+        private static final long serialVersionUID = 1L;
+
+        private transient List<AttendanceRecord> records = new ArrayList<>();
+
+        void set(List<AttendanceRecord> newRecords) {
+            records = new ArrayList<>(newRecords);
+            fireTableDataChanged();
+        }
+
+        @Override
+        public int getRowCount() {
+            return records.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return showEmployee ? 3 : 2;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return switch (column) {
+                case 0 -> "Data e hora";
+                case 1 -> showEmployee ? "Funcionário" : "Nota";
+                default -> "Nota";
+            };
+        }
+
+        @Override
+        public Class<?> getColumnClass(int column) {
+            return switch (column) {
+                case 0 -> LocalDateTime.class;
+                case 1 -> showEmployee ? String.class : Double.class;
+                default -> Double.class;
+            };
+        }
+
+        @Override
+        public Object getValueAt(int row, int column) {
+            AttendanceRecord record = records.get(row);
+            return switch (column) {
+                case 0 -> record.recordedAt();
+                case 1 -> showEmployee ? record.employee().name() : record.similarity();
+                default -> record.similarity();
+            };
         }
     }
 }
