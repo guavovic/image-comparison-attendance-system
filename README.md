@@ -32,7 +32,7 @@ Java (Swing, AWT, ImageIO). No external dependencies.
 
 ## How to Open
 
-Eclipse project. Import the `sistema-bater-ponto-ia-projeto` folder as an existing Java project and run `TelaCentral`.
+Maven project, requires JDK 25. Build with `./mvnw package` and run `com.visuais.TelaCentral`.
 
 ## Known Limitations
 
