@@ -33,3 +33,6 @@ target/
 .classpath
 .project
 .settings/
+
+# Dados do FacePoint
+data/
