@@ -1,7 +1,6 @@
 package io.github.guavovic.pontofacial.camera;
 
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -11,10 +10,14 @@ import org.opencv.videoio.Videoio;
 
 public final class Camera implements AutoCloseable {
 
-    public record Info(int index, int width, int height) {
+    public record Info(int index, String name) {
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
-    private static final int MAX_INDEX = 6;
     private static final int BACKEND = Videoio.CAP_DSHOW;
 
     private static boolean loaded;
@@ -26,21 +29,9 @@ public final class Camera implements AutoCloseable {
         this.capture = capture;
     }
 
-    public static List<Info> available() {
-        load();
-        List<Info> cameras = new ArrayList<>();
-        for (int index = 0; index < MAX_INDEX; index++) {
-            VideoCapture probe = new VideoCapture(index, BACKEND);
-            try {
-                if (probe.isOpened()) {
-                    cameras.add(new Info(index, (int) probe.get(Videoio.CAP_PROP_FRAME_WIDTH),
-                            (int) probe.get(Videoio.CAP_PROP_FRAME_HEIGHT)));
-                }
-            } finally {
-                probe.release();
-            }
-        }
-        return cameras;
+    public static List<Info> list() {
+        requireWindows();
+        return DirectShowDevices.list().stream().filter(info -> !DirectShowDevices.isVirtual(info.name())).toList();
     }
 
     public static Camera open(int index) {
@@ -74,14 +65,18 @@ public final class Camera implements AutoCloseable {
         if (loaded) {
             return;
         }
-        if (!System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("windows")) {
-            throw new CameraException("A câmera só funciona no Windows.");
-        }
+        requireWindows();
         try {
             nu.pattern.OpenCV.loadLocally();
         } catch (UnsatisfiedLinkError | RuntimeException e) {
             throw new CameraException("Não foi possível carregar o suporte à câmera.", e);
         }
         loaded = true;
+    }
+
+    private static void requireWindows() {
+        if (!System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("windows")) {
+            throw new CameraException("A câmera só funciona no Windows.");
+        }
     }
 }
