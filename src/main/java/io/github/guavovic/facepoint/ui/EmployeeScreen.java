@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Container;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Comparator;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -87,18 +86,15 @@ public final class EmployeeScreen {
                 output.append(String.format(Ui.LOCALE, "%n %s: %.2f%%%n", score.employee().name(),
                         score.similarity() * 100));
             }
-            if (result.records().isEmpty()) {
-                output.append("\n Nenhum funcionário reconhecido. O ponto não foi registrado.\n");
+            if (result.record().isEmpty()) {
+                output.append("\n Funcionário não reconhecido.\n Ponto não registrado.\n");
             } else {
-                for (AttendanceRecord record : result.records()) {
-                    output.append("\n  ( OK - Ponto registrado: " + record.employee().name() + " )\n");
-                }
+                AttendanceRecord record = result.record().get();
+                output.append("\n  ( OK - Ponto registrado: " + record.employee().name() + " )\n");
                 output.append("\n =================================");
                 output.append("\n  Validação de ponto finalizada!");
                 output.append("\n =================================\n");
-                result.records().stream()
-                        .max(Comparator.comparingDouble(AttendanceRecord::similarity))
-                        .ifPresent(best -> show(best.employee()));
+                show(record.employee());
             }
         } catch (IOException | StorageException e) {
             Ui.showError(frame, e.getMessage());
