@@ -14,7 +14,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class SalvarDiretorio {
+public final class SalvarDiretorio {
 
     public String path;
     public String pacote;

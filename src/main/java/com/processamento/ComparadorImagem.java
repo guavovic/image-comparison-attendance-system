@@ -25,8 +25,7 @@ public class ComparadorImagem {
 
 	public static void setComparar(JTextArea textArea) {
 
-		ConverterImagem cv = new ConverterImagem();
-		cv.setConverter(textArea);
+		ConverterImagem.setConverter(textArea);
 
 		SalvarDiretorio sd = new SalvarDiretorio();
 		String endereco1 = sd.setPegarCaminho();

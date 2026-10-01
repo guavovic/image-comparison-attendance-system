@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class TelaRegistroCentral extends JFrame {
+public final class TelaRegistroGerenciamento extends JFrame {
 
     private JList<ArquivoItem> lista;
 
@@ -27,18 +27,17 @@ public class TelaRegistroCentral extends JFrame {
     
     private final List<ArquivoItem> nomesArquivosSemExtensao;
 
-    public TelaRegistroCentral() {
-        
-    	String usuario = "Ana Souza";
+    public TelaRegistroGerenciamento() {
     	
     	SalvarDiretorio sd = new SalvarDiretorio();
     	String endereco = sd.setPegarCaminho();
     	
     	String parteSalvar = "salvar/";
-    	String parteSubstituir = "\\processamento\\registrosSalvos\\" + usuario;
+    	String parteSubstituir = "\\processamento\\registrosSalvos";
     	
     	novoEndereco = endereco.replace(parteSalvar, parteSubstituir);
     	
+    	// Colocar_diretorio
         String diretorio = novoEndereco;
 
         String[] nomesArquivos = new File(diretorio).list();
@@ -46,7 +45,7 @@ public class TelaRegistroCentral extends JFrame {
         nomesArquivosSemExtensao = new ArrayList<>();
 
         for (int i = 0; i < nomesArquivos.length; i++) {
-            nomesArquivosSemExtensao.add(new ArquivoItem(i + 1, "  " + nomesArquivos[i].replace(".txt", "")));
+            nomesArquivosSemExtensao.add(new ArquivoItem(i + 1, ".  " + nomesArquivos[i].replace(".txt", "")));
         }
 
         lista = new JList<>(nomesArquivosSemExtensao.toArray(new ArquivoItem[0]));
@@ -115,7 +114,7 @@ public class TelaRegistroCentral extends JFrame {
 
         for (int i = 0; i < nomesArquivos.length; i++) {
             if (nomesArquivos[i].replace(".txt", "").toLowerCase().contains(termo)) {
-                arquivosEncontrados.add(new ArquivoItem(i + 1, "  " + nomesArquivos[i].replace(".txt", "")));
+                arquivosEncontrados.add(new ArquivoItem(i + 1, ".  " + nomesArquivos[i].replace(".txt", "")));
             }
         }
 
