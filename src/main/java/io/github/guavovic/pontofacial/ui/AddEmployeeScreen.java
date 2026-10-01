@@ -2,6 +2,7 @@ package io.github.guavovic.pontofacial.ui;
 
 import java.awt.FlowLayout;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -24,13 +25,14 @@ final class AddEmployeeScreen {
     private final JComboBox<String> shift = Ui.shiftCombo();
     private final JTextField role = Ui.field(20);
     private final JLabel photoLabel = new JLabel("Nenhuma foto");
-    private List<Path> photos = List.of();
+    private final List<Path> photos = new ArrayList<>();
 
     AddEmployeeScreen(EmployeeService employees) {
         this.employees = employees;
 
         JPanel photoRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         photoRow.add(Ui.button("Escolher fotos", e -> choosePhotos()));
+        photoRow.add(Ui.button("Tirar foto", e -> takePhoto()));
         photoRow.add(photoLabel);
 
         Form form = new Form().row("Nome", name).row("Turno", shift).row("Função", role).row("Fotos", photoRow);
@@ -50,17 +52,26 @@ final class AddEmployeeScreen {
     }
 
     private void choosePhotos() {
-        List<Path> chosen = Ui.chooseImages(frame, null);
-        if (!chosen.isEmpty()) {
-            photos = chosen;
-            photoLabel.setText(chosen.size() == 1 ? "1 foto" : chosen.size() + " fotos");
+        photos.addAll(Ui.chooseImages(frame, null));
+        showPhotoCount();
+    }
+
+    private void takePhoto() {
+        Path photo = Ui.takePhoto(frame);
+        if (photo != null) {
+            photos.add(photo);
+            showPhotoCount();
         }
+    }
+
+    private void showPhotoCount() {
+        photoLabel.setText(photos.isEmpty() ? "Nenhuma foto" : photos.size() == 1 ? "1 foto" : photos.size() + " fotos");
     }
 
     private void add() {
         try {
             Employee employee = employees.register(name.getText(), (String) shift.getSelectedItem(), role.getText(),
-                    photos);
+                    List.copyOf(photos));
             Ui.showInfo(frame, employee.name() + " cadastrado com o ID " + employee.id() + ".");
             frame.dispose();
         } catch (ValidationException | StorageException e) {

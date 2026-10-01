@@ -35,6 +35,7 @@ final class EditEmployeeScreen {
 
         JPanel photoRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         photoRow.add(Ui.button("Adicionar fotos", e -> addPhotos()));
+        photoRow.add(Ui.button("Tirar foto", e -> takePhoto()));
         photoRow.add(photoLabel);
 
         Form form = new Form().row("Funcionário", combo).row("Nome", name).row("Turno", shift).row("Função", role)
@@ -74,6 +75,14 @@ final class EditEmployeeScreen {
     private void addPhotos() {
         newPhotos.addAll(Ui.chooseImages(frame, null));
         showPhotoCount((Employee) combo.getSelectedItem());
+    }
+
+    private void takePhoto() {
+        Path photo = Ui.takePhoto(frame);
+        if (photo != null) {
+            newPhotos.add(photo);
+            showPhotoCount((Employee) combo.getSelectedItem());
+        }
     }
 
     private void showPhotoCount(Employee employee) {

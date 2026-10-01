@@ -27,6 +27,11 @@
             <version>3.53.4.0</version>
         </dependency>
         <dependency>
+            <groupId>org.openpnp</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.9.0-0</version>
+        </dependency>
+        <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
             <version>3.7.2</version>
@@ -163,6 +168,15 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.openpnp:opencv</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>nu/pattern/opencv/linux/**</exclude>
+                                        <exclude>nu/pattern/opencv/osx/**</exclude>
+                                        <exclude>nu/pattern/opencv/windows/x86_32/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>

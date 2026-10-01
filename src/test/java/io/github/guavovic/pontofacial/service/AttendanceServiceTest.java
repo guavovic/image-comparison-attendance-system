@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,6 +58,25 @@ class AttendanceServiceTest {
         assertEquals(TestSupport.NOW, record.recordedAt());
         assertTrue(record.similarity() >= ImageComparator.THRESHOLD);
         assertEquals(List.of(record), service.allRecords());
+    }
+
+    @Test
+    @DisplayName("bater o ponto com uma imagem (como a da câmera) funciona igual à foto")
+    void punchesWithAnImageInMemory() throws IOException {
+        BufferedImage image = TestSupport.sampleImage("test-photos", "carla-mendes.jpg");
+
+        PunchResult result = service.punch(image, "da câmera");
+
+        assertEquals("Carla Mendes", result.record().orElseThrow().employee().name());
+    }
+
+    @Test
+    @DisplayName("o aviso de imagem não reconhecida diz de onde ela veio")
+    void noticeNamesTheSource() throws IOException {
+        service.punch(TestSupport.solid(java.awt.Color.GRAY, 50), "da câmera");
+
+        assertTrue(service.notices().get(0).message().startsWith("Foto da câmera não reconhecida"),
+                service.notices().get(0).message());
     }
 
     @Test

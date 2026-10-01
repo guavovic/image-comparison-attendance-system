@@ -5,9 +5,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Insets;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -51,12 +53,13 @@ public final class EmployeeScreen {
         this.services = services;
         this.testPhotos = testPhotos;
 
-        JButton punch = Ui.button("Bater ponto", e -> punch());
+        JButton punch = Ui.button("Bater ponto", e -> punchWithCamera());
+        JButton file = Ui.button("Usar uma foto", e -> punchWithFile());
         JButton records = Ui.button("Meus registros", e -> openRecords());
         JButton exit = Ui.button("Sair", e -> System.exit(0));
 
         frame = Ui.screen("Ponto Facial", "Ponto Facial", "Registro de ponto", Ui.clock(), body(),
-                Ui.actions(exit, records, punch), JFrame.EXIT_ON_CLOSE);
+                Ui.actions(exit, records, file, punch), JFrame.EXIT_ON_CLOSE);
         Ui.primary(frame, punch);
         show(null);
     }
@@ -95,7 +98,7 @@ public final class EmployeeScreen {
         output.setWrapStyleWord(true);
         output.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
         output.setMargin(new Insets(8, 10, 8, 10));
-        output.setText("Clique em Bater ponto e escolha a foto.\n");
+        output.setText("Clique em Bater ponto para tirar a foto pela câmera\nou em Usar uma foto para escolher um arquivo.\n");
 
         JPanel body = new JPanel(new BorderLayout(24, 0));
         body.add(employee, BorderLayout.WEST);
@@ -103,7 +106,14 @@ public final class EmployeeScreen {
         return body;
     }
 
-    private void punch() {
+    private void punchWithCamera() {
+        BufferedImage image = CameraDialog.capture(frame);
+        if (image != null) {
+            punch(image, "da câmera");
+        }
+    }
+
+    private void punchWithFile() {
         JFileChooser chooser = new JFileChooser(testPhotos.toFile());
         chooser.setDialogTitle("Escolha a foto para bater o ponto");
         chooser.setAcceptAllFileFilterUsed(false);
@@ -113,10 +123,23 @@ public final class EmployeeScreen {
         }
 
         Path file = chooser.getSelectedFile().toPath();
-        output.setText("Foto: " + file.getFileName() + "\n\n");
+        try {
+            BufferedImage image = ImageIO.read(file.toFile());
+            if (image == null) {
+                Ui.showError(frame, "O arquivo " + file.getFileName() + " não é uma imagem válida.");
+                return;
+            }
+            punch(image, file.getFileName().toString());
+        } catch (IOException e) {
+            Ui.showError(frame, "Não foi possível ler o arquivo " + file.getFileName() + ".");
+        }
+    }
+
+    private void punch(BufferedImage image, String source) {
+        output.setText("Foto " + source + "\n\n");
 
         try {
-            PunchResult result = services.attendance().punch(file);
+            PunchResult result = services.attendance().punch(image, source);
             for (PhotoScore score : result.scores()) {
                 output.append(String.format(Ui.LOCALE, "%-24s %6.2f%%%n", score.employee().name(),
                         score.similarity() * 100));
