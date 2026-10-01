@@ -27,6 +27,13 @@ public final class Database {
                 similarity  REAL NOT NULL
             );
             CREATE INDEX idx_attendance_records_employee ON attendance_records (employee_id, recorded_at);
+            """,
+            """
+            CREATE TABLE notices (
+                id         INTEGER PRIMARY KEY,
+                created_at TEXT NOT NULL,
+                message    TEXT NOT NULL
+            );
             """);
 
     private final String url;

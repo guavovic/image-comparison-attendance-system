@@ -109,7 +109,7 @@ public final class EmployeeScreen {
             return;
         }
         try {
-            RecordsScreen.forEmployee(current, attendance.recordsOf(current)).open();
+            RecordsScreen.forEmployee(current, attendance).open();
         } catch (StorageException e) {
             Ui.showError(frame, e.getMessage());
         }

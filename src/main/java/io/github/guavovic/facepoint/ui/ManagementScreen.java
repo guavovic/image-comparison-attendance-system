@@ -6,16 +6,16 @@ import java.awt.Font;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import io.github.guavovic.facepoint.service.AttendanceService;
+import io.github.guavovic.facepoint.service.Services;
 import io.github.guavovic.facepoint.storage.StorageException;
 
 public final class ManagementScreen {
 
-    private final AttendanceService attendance;
+    private final Services services;
     private final JFrame frame;
 
-    public ManagementScreen(AttendanceService attendance) {
-        this.attendance = attendance;
+    public ManagementScreen(Services services) {
+        this.services = services;
         this.frame = Ui.frame("Tela de Gerenciamento", 816, 472, JFrame.EXIT_ON_CLOSE);
         build(frame.getContentPane());
     }
@@ -27,18 +27,18 @@ public final class ManagementScreen {
     private void build(Container content) {
         content.add(Ui.clock(660, 408));
         content.add(Ui.button("SAIR", 710, 40, 60, 23, e -> System.exit(0)));
-        content.add(Ui.button("Gerenciamento de Pontos", 514, 40, 166, 23, e -> openRecords()));
-        content.add(Ui.button("Gerenciamento de Acessos", 330, 40, 174, 23, e -> new AccessManagementScreen().open()));
-        content.add(Ui.button("Lista de Avisos", 206, 40, 114, 23, null));
-        content.add(Ui.button("Gerar Relatorio", 82, 40, 114, 23, null));
+        content.add(Ui.button("Gerenciamento de Pontos", 514, 40, 166, 23, e -> guard(() -> RecordsScreen.forEveryone(services.attendance()).open())));
+        content.add(Ui.button("Gerenciamento de Acessos", 330, 40, 174, 23, e -> new AccessManagementScreen(services).open()));
+        content.add(Ui.button("Lista de Avisos", 206, 40, 114, 23, e -> guard(() -> new NoticesScreen(services.attendance()).open())));
+        content.add(Ui.button("Gerar Relatorio", 82, 40, 114, 23, e -> guard(() -> new AttendanceReportScreen(services).open())));
         Ui.addLogo(content);
         Ui.addBars(content, 800, 49, 400, 33);
         addCenterLogo(content, 330);
     }
 
-    private void openRecords() {
+    private void guard(Runnable action) {
         try {
-            RecordsScreen.forEveryone(attendance.allRecords()).open();
+            action.run();
         } catch (StorageException e) {
             Ui.showError(frame, e.getMessage());
         }
