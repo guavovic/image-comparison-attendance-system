@@ -30,6 +30,6 @@ OpenCV, só para Windows 64 bits.
 ## Consequências
 
 - Dois quadros seguidos da mesma cena, numa câmera de notebook, tiraram nota 0,96, acima do limite de 0,91 mas com folga pequena. A comparação é pixel a pixel e depende de luz, distância e pose parecidas entre o cadastro e a hora do ponto. Com uso real, o limite pode precisar de ajuste, e o oval ajuda a manter o enquadramento.
-- Nos testes, a câmera embutida (`ACER HD User Facing`) não abre pelo DirectShow, por um motivo que não foi descoberto, e o diálogo pula para a webcam externa (`HD Pro Webcam C920`), que funciona em 640x480, 720p e 1080p. Quem usar só a câmera embutida pode não conseguir tirar foto por ela.
+- Nos testes, a câmera embutida (`ACER HD User Facing`) está desativada no Windows, e por isso não abre. Ela continua aparecendo na lista do DirectShow, o diálogo tenta abri-la, não consegue e passa para a webcam externa (`HD Pro Webcam C920`), que funciona em 640x480, 720p e 1080p. Ativar a câmera embutida no Windows resolve, sem mudar o programa.
 - Os testes não carregam a biblioteca nativa: a conversão do quadro para imagem é Java puro (`Frames`) e é a parte testada. A captura em si é conferida com uma câmera de verdade.
 - O CI roda no Linux, onde a câmera não existe, e por isso não exercita a captura.
