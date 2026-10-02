@@ -37,6 +37,8 @@ final class CameraDialog {
     private final AtomicReference<BufferedImage> latest = new AtomicReference<>();
     private volatile int requestedIndex = -1;
     private volatile boolean running = true;
+    private volatile boolean autoPicking = true;
+    private volatile List<Camera.Info> found = List.of();
     private BufferedImage result;
 
     private CameraDialog(Component parent) {
@@ -44,20 +46,6 @@ final class CameraDialog {
                 JDialog.ModalityType.APPLICATION_MODAL);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        cameras.setRenderer(new javax.swing.DefaultListCellRenderer() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index,
-                    boolean selected, boolean focus) {
-                super.getListCellRendererComponent(list, value, index, selected, focus);
-                if (value instanceof Camera.Info info) {
-                    setText("Câmera " + (cameras.getItemCount() > 0 ? indexOf(info) + 1 : 1) + " (" + info.width()
-                            + "x" + info.height() + ")");
-                }
-                return this;
-            }
-        });
         cameras.addActionListener(e -> {
             Camera.Info selected = (Camera.Info) cameras.getSelectedItem();
             if (selected != null) {
@@ -115,20 +103,11 @@ final class CameraDialog {
         return camera.result;
     }
 
-    private int indexOf(Camera.Info info) {
-        for (int i = 0; i < cameras.getItemCount(); i++) {
-            if (cameras.getItemAt(i).equals(info)) {
-                return i;
-            }
-        }
-        return 0;
-    }
-
     private void work() {
         try {
-            List<Camera.Info> found = Camera.available();
+            found = Camera.list();
             if (found.isEmpty()) {
-                SwingUtilities.invokeLater(() -> status.setText("Nenhuma câmera encontrada."));
+                SwingUtilities.invokeLater(() -> status.setText("Nenhuma câmera real encontrada."));
                 return;
             }
             SwingUtilities.invokeLater(() -> {
@@ -166,6 +145,7 @@ final class CameraDialog {
                     preview.show(frame);
                     shoot.setEnabled(true);
                     if (showStatus) {
+                        autoPicking = false;
                         status.setText("Centralize o rosto no oval e clique em Tirar foto.");
                     }
                 });
@@ -173,7 +153,26 @@ final class CameraDialog {
             }
         } catch (CameraException e) {
             requestedIndex = -1;
-            SwingUtilities.invokeLater(() -> status.setText(e.getMessage()));
+            failed(index);
+        }
+    }
+
+    private void failed(int index) {
+        List<Camera.Info> cameraList = found;
+        int position = 0;
+        while (position < cameraList.size() && cameraList.get(position).index() != index) {
+            position++;
+        }
+        String name = position < cameraList.size() ? cameraList.get(position).name() : "a câmera";
+        int next = position + 1;
+        if (autoPicking && next < cameraList.size()) {
+            SwingUtilities.invokeLater(() -> {
+                status.setText("Não foi possível abrir " + name + ". Tentando a próxima câmera...");
+                cameras.setSelectedIndex(next);
+            });
+        } else {
+            SwingUtilities.invokeLater(
+                    () -> status.setText("Não foi possível abrir " + name + ". Escolha outra câmera na lista."));
         }
     }
 
